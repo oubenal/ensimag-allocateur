@@ -6,7 +6,7 @@ endif(COMMAND cmake_policy)
 project(Allocphy)
 enable_testing()
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror -std=gnu99")
 
 #########
 # Gestion des variantes
@@ -80,9 +80,10 @@ target_link_libraries(memshell allocphy)
 ##
 # Construction de l'archive
 ##
+string(REPLACE ";" "_" LOGINS_SANS_POINTVIRGULE "${VARIANTE_LOGINS}")
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH ${VARIANTE_LOGINS})
+set(CPACK_PACKAGE_VERSION_PATCH ${LOGINS_SANS_POINTVIRGULE})
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES
   "~$"
