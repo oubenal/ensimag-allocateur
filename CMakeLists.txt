@@ -65,6 +65,8 @@ endif(EXISTS /usr/src/gtest)
 ##
 add_library(allocphy SHARED src/mem.c)
 
+add_library(mempy SHARED src/mempymodule.c)
+target_link_libraries(mempy allocphy)
 ##
 # Construction du programme de tests unitaires
 ##
