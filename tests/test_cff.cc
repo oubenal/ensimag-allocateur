@@ -5,14 +5,16 @@
  *****************************************************/
 
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "../src/mem.h"
 
+constexpr int S8 = ALLOC_MEM_SIZE/8;
+using namespace std;
+
 TEST( Variantes, cff ) {
   int multi = 0;
-  int i;
-  int S8 = ALLOC_MEM_SIZE/8;
-  void *tab[8]={};
+  vector<void *> tab(8);
   
 #ifndef CFF
   return;
@@ -24,14 +26,14 @@ TEST( Variantes, cff ) {
 
   ASSERT_EQ( mem_init(), 0 );
 
-  for(i=0; i < 8; i++)
+  for(auto &t : tab)
     {
-      tab[i] = mem_alloc(S8);
-      ASSERT_NE( tab[i], (void *)0 );
-      memset(tab[i], 3, S8);
+      t = mem_alloc(S8);
+      ASSERT_NE( t, (void *)0 );
+      memset(t, 3, S8);
     }
 
-  for(i=1; i < 8; i+= 2)
+  for(int i=1; i < 8; i+= 2)
     ASSERT_EQ( mem_free( tab[i], S8 ), 0 );
 
   ASSERT_EQ( mem_alloc(3*S8), (void *)0 );

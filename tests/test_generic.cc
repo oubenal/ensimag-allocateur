@@ -8,10 +8,13 @@
 #include <sys/resource.h>
 
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "../src/mem.h"
 #include "test_run_cpp.h"
 #include "test_generic.h"
+
+using namespace std;
 
 TEST(Init, noinit) {
   ASSERT_EQ( mem_alloc(64), (void *)0 );
@@ -98,16 +101,16 @@ TEST_F(BaseMemTest, intervals) {
 }
 
 TEST_F(BaseMemTest, bouclefreepairimpair) {
-  int nb=2*50;
-  void *tab[nb];
+  constexpr int nb=2*50;
+  vector<void *> tab(nb);
 
   ASSERT_LT( 64*nb,  ALLOC_MEM_SIZE );
   
-  for(int i=0; i < nb; i++)
+  for(auto &t: tab)
     {
-      tab[i] = mem_alloc(64);
-      ASSERT_NE( tab[i], (void *)0 );
-      memset(tab[i], 3, 64);
+      t = mem_alloc(64);
+      ASSERT_NE( t, (void *)0 );
+      memset(t, 3, 64);
     }
   for(int i=0; i < nb; i+=2)
     {

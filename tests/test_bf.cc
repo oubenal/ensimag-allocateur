@@ -5,14 +5,17 @@
  *****************************************************/
 
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "../src/mem.h"
 
+constexpr int NBCHUNK = 8;
+constexpr int S8 = ALLOC_MEM_SIZE/8;
+using namespace std;
+
 TEST( Variantes, bf ) {
   int multi = 0;
-  int i;
-  int S8 = ALLOC_MEM_SIZE/8;
-  void *tab[8]={};
+  vector<void *> tab(NBCHUNK);
   
 #ifndef BF
   return;
@@ -23,12 +26,15 @@ TEST( Variantes, bf ) {
   ASSERT_EQ(multi, 2);
   ASSERT_EQ( mem_init(), 0 );
 
-  for(int i=0; i < 6; i++) {
-    tab[i] = mem_alloc(S8);
-    ASSERT_NE( tab[i], (void*)0 );
-    memset(tab[i], 3, S8);
+  for(auto &t : tab) {
+    t = mem_alloc(S8);
+    ASSERT_NE( t, (void*)0 );
+    memset(t, 3, S8);
   }
+  ASSERT_EQ( mem_free(tab[6], S8), 0);
+  ASSERT_EQ( mem_free(tab[7], S8), 0);
 
+  
   int decal = multi*sizeof(void*);
   tab[6] = mem_alloc(S8-decal);
   ASSERT_NE( tab[6], (void *)0 );
@@ -38,7 +44,7 @@ TEST( Variantes, bf ) {
   memset(tab[6], 3, S8+decal);
     
 
-  for(i=0; i < 6; i+= 2)
+  for(int i=0; i < 6; i+= 2)
     ASSERT_EQ( mem_free( tab[i], S8 ), 0);
   ASSERT_EQ( mem_free(tab[6], S8 - decal), 0);
   
@@ -53,7 +59,7 @@ TEST( Variantes, bf ) {
   tab[4] = mem_alloc(S8);
   ASSERT_NE( tab[4], (void *)0 );
 
-  for(i=0; i < 6; i++)
+  for(int i=0; i < 6; i++)
     ASSERT_EQ( mem_free( tab[i], S8 ), 0);
 
   ASSERT_EQ( mem_free(tab[7], S8+decal), 0);

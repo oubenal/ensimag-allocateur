@@ -24,7 +24,9 @@ public:
   int idx;
   void *adr;
   int size;
-  allocat(int s) : idx(0), adr(0), size(s)  {}
+  allocat(int s) : idx {0}, adr {0}, size {s}  {}
+  void doAlloc();
+  void doLiberer();
 };
 
 /*  remplissage de la liste */
@@ -49,19 +51,6 @@ void fillList_fibo<2> (vector<allocat> &li) {}
 
 template < >
 void fillList_fibo<3> (vector<allocat> &li) {}
-
-
-class doAlloc : public unary_function < void, allocat & >
-{
-public:
-  void operator() (allocat &t);
-};
-
-class doLiberer : public unary_function<void, allocat &>
-{
-public:
-  void operator() (allocat &t);
-};
 
 
 #endif

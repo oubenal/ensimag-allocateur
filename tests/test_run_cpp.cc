@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
-#include <algorithm>
+#include <random>
 #include <functional>
 
 #include "test_run.H"
@@ -26,50 +26,50 @@ static bool be_verbose = false;
 /* manipulation de la liste des allocations */
 
 
-void doAlloc ::operator() (allocat &t)
+void allocat::doAlloc()
 {
   static int nb=0;
 
-  assert (t.size > 0);
+  assert (size > 0);
   
-  t.adr = mem_alloc (t.size);
+  adr = mem_alloc (size);
 
 
-  if ( t.adr == (char *)0 )
+  if ( adr == (char *)0 )
     {
       /* l'allocation a echoue */
-      printf ("Une allocation de %d a echoue !\n", t.size );
+      printf ("Une allocation de %d a echoue !\n", size );
       
-      t.adr = 0;
+      adr = nullptr;
     }
   else
     {
-      t.idx = nb;
+      idx = nb;
       nb ++;
       if (be_verbose)
-	printf ("alloc %d (taille: %d): %p\n", t.idx, t.size, t.adr);
+	printf ("alloc %d (taille: %d): %p\n", idx, size, adr);
       
       /* ecrire dans le bloc */
-      memset (t.adr, 0, t.size );
+      memset (adr, 0, size );
     }
   
   
 }
 
-void doLiberer ::operator() (allocat &t)
+void allocat::doLiberer()
 {
-  assert (t.size > 0);
+  assert (size > 0);
   
-  if (t.adr)
+  if (adr)
     {
       /* ecrire dans le bloc */
-      memset (t.adr, 0, t.size );
+      memset (adr, 0, size );
 
       if (be_verbose)
-	printf ("libere %d (taille: %d): %p\n", t.idx, t.size, t.adr);
+	printf ("libere %d (taille: %d): %p\n", idx, size, adr);
       
-      mem_free (t.adr, t.size);
-      t.adr = 0;
+      mem_free (adr, size);
+      adr = nullptr;
     }
 }
 
@@ -86,13 +86,15 @@ void random_run_cpp(int nb=100, bool verbose=false)
   /* afficher l'etat de la memoire */
     
   /* faire les allocations */
-  for_each (liste_allocation.begin(), liste_allocation.end(), doAlloc());
+  for(auto &l: liste_allocation)
+    l.doAlloc();
   
   /* melanger la liste */
-  random_shuffle (liste_allocation.begin (), liste_allocation.end ());
+  shuffle (liste_allocation);
   
   /* faire les deallocations */
-  for_each ( liste_allocation.begin (), liste_allocation.end (), doLiberer ());
+  for(auto &l: liste_allocation)
+    l.doLiberer ();
   
 }
 
