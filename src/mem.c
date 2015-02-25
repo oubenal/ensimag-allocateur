@@ -34,9 +34,43 @@ mem_init()
 	max = get_power2(ALLOC_MEM_SIZE);
 	TZL = (void **) malloc(sizeof(void *) * max)
 	for(int i = 0; i<max-1; i++) 
-		TZL[i]=NULL;
+		TZL[i]=0;
 	TZL[max-1] = zone_memoire;
   return 0;
+}
+
+void insert(void *addr, int j) {
+	void *tmp = TZL[j];
+	if(!TZL[j]) {
+		TZL[j] = addr;
+		*addr = 0;
+	}
+	else {
+		while(!(*tmp)) {
+			tmp = *tmp;
+		}
+		*tmp = addr;
+		*addr = 0;
+	}	
+}
+
+void remove(int j) {
+	void *cour = TZL[j], * prec;
+	if(!(*cour)) {
+		TZL[i]=0;
+	}
+	else {
+		prec = cour;
+		cour = *prec;
+		while(*cour) {
+			prec = cour; cour = *prec;
+		}
+		*prec = 0;
+	}
+	while(!(*tmp)) {
+		tmp = *tmp;
+	}
+	
 }
 
 void *
@@ -60,6 +94,7 @@ mem_alloc(unsigned long size)
 		remove(j);
 		
 	}
+	return get_mem(k);
 }
 
 int 
