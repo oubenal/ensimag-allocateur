@@ -12,7 +12,8 @@
 /** squelette du TP allocateur memoire */
 
 void *zone_memoire = 0;
-
+int max = 0;
+void **TZL = 0;
 /* ecrire votre code ici */
 
 int 
