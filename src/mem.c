@@ -12,7 +12,7 @@
 /** squelette du TP allocateur memoire */
 
 void *zone_memoire = 0;
-int max = 0;
+int max;
 void **TZL = 0;
 /* ecrire votre code ici */
 
@@ -31,11 +31,11 @@ mem_init()
       return -1;
     }
 
-  /* ecrire votre code ici */
 	max = get_power2(ALLOC_MEM_SIZE);
-	TZL = (void **) malloc(sizeof(void *) * max);
-	for(int i = 0; i<max; i++) 
+	TZL = (void **) malloc(sizeof(void *) * (max+1));
+	for(int i = 0; i<max; i++) {
 		TZL[i]=0;
+	}
 	TZL[max] = zone_memoire;
   return 0;
 }
@@ -83,30 +83,36 @@ void *get_mem(int k){
 void *
 mem_alloc(unsigned long size)
 {
+	if(!TZL)
+		return 0;
   /*  ecrire votre code ici */
-	int k = get_power2(size);printf("\n ****2^k = %lu, k = %d ******\n", size, k);
+	int k = get_power2(size);//printf("\n ****2^k = %lu, k = %d ******\n", size, k);
 	int i, j;
-	for(i=k; i<max+1; i++)
+	for(i=k; i<=max; i++)
 		if(TZL[i])
 			break;
 
-	if (i == max && TZL[max]==NULL)
-	  return 0;  
+	if (i == max && TZL[max]==0) {
+		return 0;
+	} 
 //	void *addr1 = TZL[i], *addr2; 
 	void *addr = TZL[i];
 	TZL[i] = 0;
-	for(j=i+1; j>=k; j--) {
-		TZL[i] = addr;
-		TZL[i] += (unsigned int) 1<< (j-1);
-/*		
-		addr2 = addr1;
-		*(void **)addr2 += (unsigned int) 1<< (j-1);
-		
-		insertTZL(addr2, j-1);
-		removeTZL(j);
-*/
+	for(j=i-1; j>=k; j--) {
+		TZL[j] = addr;
+		TZL[j] += (unsigned int) 1<< j;
 	}
 	return addr;
+ 
+
+//		addr2 = addr1;
+//		*(void **)addr2 += (unsigned int) 1<< (j-1);
+		
+//		insertTZL(addr2, j-1);
+//		removeTZL(j);
+	
+
+return 0;
 }
 
 int 
