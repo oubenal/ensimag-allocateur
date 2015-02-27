@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 #include "mem.h"
 /** squelette du TP allocateur memoire */
 
@@ -32,69 +33,80 @@ mem_init()
 
   /* ecrire votre code ici */
 	max = get_power2(ALLOC_MEM_SIZE);
-	TZL = (void **) malloc(sizeof(void *) * max)
-	for(int i = 0; i<max-1; i++) 
+	TZL = (void **) malloc(sizeof(void *) * max);
+	for(int i = 0; i<max; i++) 
 		TZL[i]=0;
-	TZL[max-1] = zone_memoire;
+	TZL[max] = zone_memoire;
   return 0;
 }
 
-void insert(void *addr, int j) {
+void insertTZL(void *addr, int j) {
 	void *tmp = TZL[j];
 	if(!TZL[j]) {
 		TZL[j] = addr;
-		*addr = 0;
+		*(void **)addr = NULL;
 	}
 	else {
-		while(!(*tmp)) {
-			tmp = *tmp;
+		while(!(*(void **)tmp)) {
+			tmp = *(void **)tmp;
 		}
-		*tmp = addr;
-		*addr = 0;
+		*(void **)tmp = addr;
+		*(void **)addr = 0;
 	}	
 }
 
-void remove(int j) {
-	void *cour = TZL[j], * prec;
-	if(!(*cour)) {
-		TZL[i]=0;
+void removeTZL(int j) {
+	void *curr = TZL[j], * prec;
+	if(!(*(void **)curr)) {
+		TZL[j]=0;
 	}
 	else {
-		prec = cour;
-		cour = *prec;
-		while(*cour) {
-			prec = cour; cour = *prec;
+		prec = curr;
+		curr = *(void **)prec;
+		while(*(void **)curr) {
+			prec = curr; curr = *(void **)prec;
 		}
-		*prec = 0;
-	}
-	while(!(*tmp)) {
-		tmp = *tmp;
+		*(void **)prec = 0;
 	}
 	
+}
+
+void *get_mem(int k){
+	void *curr = TZL[k], *addr;
+	while(*(void **)curr) {
+		curr = *(void **)curr;
+	}
+	addr = *(void **)curr + sizeof(void *);
+	return addr;
 }
 
 void *
 mem_alloc(unsigned long size)
 {
   /*  ecrire votre code ici */
-	int k = get_power(size);
+	int k = get_power2(size);printf("\n ****2^k = %lu, k = %d ******\n", size, k);
 	int i, j;
-	for(i=k; i<max; i++)
+	for(i=k; i<max+1; i++)
 		if(TZL[i])
 			break;
 
-	if ((i==max-1) && TZL[i]==NULL)
+	if (i == max && TZL[max]==NULL)
 	  return 0;  
-	
-	void *addr1 = TZL[i], *addr2; 
-	for(j=i; j>k; j--) {
-		*addr2 = addr1 + (unsigned int) 1<< (j-1);
+//	void *addr1 = TZL[i], *addr2; 
+	void *addr = TZL[i];
+	TZL[i] = 0;
+	for(j=i+1; j>=k; j--) {
+		TZL[i] = addr;
+		TZL[i] += (unsigned int) 1<< (j-1);
+/*		
+		addr2 = addr1;
+		*(void **)addr2 += (unsigned int) 1<< (j-1);
 		
-		insert(addr2, j-1);
-		remove(j);
-		
+		insertTZL(addr2, j-1);
+		removeTZL(j);
+*/
 	}
-	return get_mem(k);
+	return addr;
 }
 
 int 
