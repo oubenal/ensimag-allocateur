@@ -7,17 +7,134 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
 #include "mem.h"
-/** squelette du TP allocateur memoire */
 
 void *zone_memoire = 0;
-int max;
-void **TZL = 0;
-/* ecrire votre code ici */
 
-unsigned int get_power2(unsigned long x) {
-	return ceil(log(x)/log(2));
+/* Structure de liste */
+struct elem {
+	unsigned long size;
+	struct elem* next;
+};
+typedef struct elem Elem;
+
+/* Tableau des zones libres */
+Elem** TZL=0;
+
+/* Taille du tableau*/
+unsigned int max = BUDDY_MAX_INDEX;
+
+
+void insertTZL(int index, Elem* elem) {
+	if(TZL[index] == 0)
+		TZL[index] = elem;
+	else {
+		Elem* tmp = TZL[index]->next;
+		TZL[index]->next = elem;
+		elem->next = tmp;
+	}
+}
+
+void delete(Elem** list, Elem* elem) {
+	if (*list != 0) {
+		if (*list == elem) {
+			*list = elem->next;
+			elem->next = 0;
+		} else {
+			delete(&((*list)->next), elem);
+		}
+	}
+}
+
+void deleteTZL(int index, Elem* elem) {
+	delete(&TZL[index], elem);
+}
+
+// work only if x is a power of 2
+int logOf2(unsigned long x) {
+	int i = 0;
+	while (!(x & 1)) {
+		i++;
+		x >>= 1;
+	}
+	return i;
+}
+
+
+unsigned long roundToPower2(unsigned long x) {
+	if (x < sizeof(Elem))
+		x = sizeof(Elem);
+	
+	x--;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x++;
+	return x;
+}
+
+
+
+void* split(Elem* block, unsigned long size) {
+	int index = logOf2(block->size);
+	for(int i=index; i>0; i--){
+		deleteTZL(i, block);
+
+		block->size = block->size / 2;
+		insertTZL(i - 1, block);
+
+		// Calcul de l'emplacement du compagnon
+		Elem* buddy = (Elem*)((unsigned long)block + block->size);
+		buddy->size = block->size; buddy->next = 0;
+
+		insertTZL(i - 1, buddy);
+		if (block->size == size) {
+			deleteTZL(i - 1, block);
+			return (void*)block;
+		}
+	}
+	return 0;
+}
+
+void* findBlock(int index, unsigned long size) {
+	int i ;
+	for(i=index; i<=max; i++) {
+		if (TZL[i] != 0) {
+			break;
+		}
+	}
+	if(i > max) {
+		return 0;
+	}
+	Elem* block = TZL[i];
+	if (block == 0) {
+		return 0;
+	} else if (block->size == size) {
+		deleteTZL(i, block);
+		return (void*)block;
+	} else {
+		return split(block, size);
+	}
+}
+
+Elem* findBuddy(void* ptr, unsigned long size) {
+	int index = logOf2(size);
+	void* buddy = zone_memoire;
+	
+	buddy += (ptr - zone_memoire) ^ size; // xor
+
+	if (index < max) {
+		Elem* curr = TZL[index];
+		while (curr != 0 && (curr != buddy)) {
+			curr = curr->next;
+		}
+		if (curr != 0) {
+			return curr;
+		}
+	}
+	return 0;
 }
 
 int 
@@ -31,104 +148,85 @@ mem_init()
       return -1;
     }
 
-	max = get_power2(ALLOC_MEM_SIZE);
-	TZL = (void **) malloc(sizeof(void *) * (max+1));
-	for(int i = 0; i<max; i++) {
-		TZL[i]=0;
-	}
-	TZL[max] = zone_memoire;
-  return 0;
-}
-
-void insertTZL(void *addr, int j) {
-	void *tmp = TZL[j];
-	if(!TZL[j]) {
-		TZL[j] = addr;
-		*(void **)addr = NULL;
-	}
-	else {
-		while(!(*(void **)tmp)) {
-			tmp = *(void **)tmp;
-		}
-		*(void **)tmp = addr;
-		*(void **)addr = 0;
-	}	
-}
-
-void removeTZL(int j) {
-	void *curr = TZL[j], * prec;
-	if(!(*(void **)curr)) {
-		TZL[j]=0;
-	}
-	else {
-		prec = curr;
-		curr = *(void **)prec;
-		while(*(void **)curr) {
-			prec = curr; curr = *(void **)prec;
-		}
-		*(void **)prec = 0;
+  if (!TZL) 
+    {
+	  TZL = (Elem **) malloc((max + 1)* sizeof(Elem *));
 	}
 	
-}
-
-void *get_mem(int k){
-	void *curr = TZL[k], *addr;
-	while(*(void **)curr) {
-		curr = *(void **)curr;
+  if (TZL == 0) 
+	{
+	  perror("mem_init:");
+	  return -1;
 	}
-	addr = *(void **)curr + sizeof(void *);
-	return addr;
+	
+  for (int i = 0; i <= max ; i++) 
+	{
+	  TZL[i] = 0;
+	}
+
+  Elem* elem = (Elem*)zone_memoire;
+  elem->size = ALLOC_MEM_SIZE;
+  elem->next = 0;
+  TZL[max] = zone_memoire;
+
+  return 0;
+  
 }
 
 void *
 mem_alloc(unsigned long size)
 {
-	if(!TZL)
-		return 0;
-  /*  ecrire votre code ici */
-	int k = get_power2(size);//printf("\n ****2^k = %lu, k = %d ******\n", size, k);
-	int i, j;
-	for(i=k; i<=max; i++)
-		if(TZL[i])
-			break;
 
-	if (i == max && TZL[max]==0) {
+	if (size == 0) {
 		return 0;
-	} 
-//	void *addr1 = TZL[i], *addr2; 
-	void *addr = TZL[i];
-	TZL[i] = 0;
-	for(j=i-1; j>=k; j--) {
-		TZL[j] = addr;
-		TZL[j] += (unsigned int) 1<< j;
 	}
-	return addr;
- 
-
-//		addr2 = addr1;
-//		*(void **)addr2 += (unsigned int) 1<< (j-1);
-		
-//		insertTZL(addr2, j-1);
-//		removeTZL(j);
+	size = roundToPower2(size);
 	
+	int index = logOf2(size);
 
-return 0;
+	Elem* elem = findBlock(index, size);
+	if (elem != 0) {
+		deleteTZL(index, elem);
+		return (void*)elem;
+	}
+
+	return 0;
+    
 }
 
 int 
 mem_free(void *ptr, unsigned long size)
 {
-  /* ecrire votre code ici */
-  return 0;
+	if (ptr == 0 || ptr > zone_memoire + ALLOC_MEM_SIZE || ptr < zone_memoire) {
+		return -1;
+	}
+	size = roundToPower2(size);
+
+	int index = logOf2(size);
+	Elem* buddy = findBuddy(ptr, size);
+	deleteTZL(index, buddy);
+
+	if (buddy == 0) {
+		Elem* elem = (Elem*)ptr;
+		elem->size = size; elem->next = 0;
+		insertTZL(index, elem);
+		return 0;
+	} else if ((void *)buddy < ptr) {
+		return mem_free(buddy, size * 2);
+	} else {
+		return mem_free(ptr, size * 2);
+	}
 }
+
 
 int
 mem_destroy()
-{
-  /* ecrire votre code ici */
+{ for (int i = 0 ; i <= max ; i++) 
+	{
+	  TZL[i] = 0;
+	}
 
   free(zone_memoire);
   zone_memoire = 0;
   return 0;
 }
-
